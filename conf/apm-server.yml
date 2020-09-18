@@ -1,0 +1,13 @@
+apm-server:
+  host: "0.0.0.0:8200"
+  kibana:
+    enabled: true
+    host: '${KIBANA_HOSTS:kibana:5601}'
+  rum:
+    enabled: true
+    allow_origins: ['*']
+
+output.elasticsearch:
+  hosts: '${ELASTICSEARCH_HOSTS:elasticsearch:9200}'
+
+monitoring.enabled: true

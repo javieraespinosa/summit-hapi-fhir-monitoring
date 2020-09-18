@@ -1,0 +1,98 @@
+
+version: '3.8'
+services:
+
+   smartapp:
+      image: smartonfhir/patient-browser:latest
+      container_name: smartapp
+      ports:
+         - 8888:80
+      volumes:
+         - ./conf/default.json5:/usr/share/nginx/html/config/default.json5
+
+
+   hapi:
+      container_name: hapi
+      image: smartonfhir/hapi-5:r3-smart
+      ports:
+         - 8080:8080
+      environment:
+         - ELASTIC_APM_SERVICE_NODE_NAME=hapi
+         - ELASTIC_APM_SERVER_URLS=http://apm:8200
+         - ELASTIC_APM_SERVICE_NAME=hapi-fhir-service
+         - ELASTIC_APM_ENABLED=true
+         - JAVA_OPTS=-Dhapi.properties=/tmp/hapi.properties.tpl 
+                     -javaagent:/elastic-apm-agent-1.18.0.jar
+      volumes:
+         - ./conf/hapi.properties:/tmp/hapi.properties.tpl
+         - ./elastic-apm-agent-1.18.0.jar:/elastic-apm-agent-1.18.0.jar
+
+         
+   kibana:
+      container_name: kibana
+      image: kibana:7.9.1
+      links:
+         - "elasticsearch"
+      ports:
+         - "5601:5601"         
+      
+
+   elasticsearch:
+      container_name: elasticsearch
+      image: docker.elastic.co/elasticsearch/elasticsearch:7.9.1
+      environment:
+         - "discovery.type=single-node"
+      ports:
+         - "9200:9200"
+
+
+   apm:
+      container_name: apm
+      image: docker.elastic.co/apm/apm-server:7.9.1
+      user:  apm-server
+      links:
+         - elasticsearch
+         - kibana
+      volumes:
+         - ./conf/apm-server.yml:/usr/share/apm-server/apm-server.yml:ro
+
+
+   filebeat:
+      image: docker.elastic.co/beats/filebeat:7.9.1
+      container_name: filebeat
+      restart: on-failure
+      user:  root
+      links:
+         - elasticsearch
+         - kibana
+      volumes:
+         - ./conf/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+         - /var/lib/docker/containers:/var/lib/docker/containers:ro
+         - /var/run/docker.sock:/var/run/docker.sock
+      
+
+   metricbeat:
+      image: docker.elastic.co/beats/metricbeat:7.9.1
+      container_name: metricbeat
+      user:  root
+      links:
+         - elasticsearch
+         - kibana
+      volumes:
+         - ./conf/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml:ro
+         - /var/run/docker.sock:/var/run/docker.sock:ro
+         - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
+         - /proc:/hostfs/proc:ro
+         - /:/hostfs:ro
+
+
+   heartbeat:
+      image: docker.elastic.co/beats/heartbeat:7.9.1
+      container_name: heartbeat
+      user:  root
+      links:
+         - elasticsearch
+         - kibana
+      volumes:
+         - ./conf/heartbeat.yml:/usr/share/heartbeat/heartbeat.yml:ro
+         - /var/run/docker.sock:/var/run/docker.sock:ro

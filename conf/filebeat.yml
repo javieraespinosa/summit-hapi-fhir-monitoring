@@ -1,0 +1,35 @@
+
+filebeat.autodiscover:
+  providers:
+    - type: docker
+      templates:
+        - condition:
+            contains:
+              docker.container.image: hapi
+          config:
+            - type: container
+              name: ${data.docker.container.name}
+              paths:
+                - /var/lib/docker/containers/${data.docker.container.id}/*.log
+              include_lines: LoggingInterceptor
+
+processors:
+  - dissect:
+      tokenizer: "%{?date} %{?ts} [%{?thread}] %{msgType} %{?loggerName} [%{}] %{requestVerb} Path[%{servletPath}] Source[%{requestHeader}] Operation[%{operationType} %{operationName} %{resourceName}] UA[%{userAgent}] Params[%{requestParameters}] ResponseEncoding[%{responseEncoding}] ProcessingTime[%{processingTime}]"
+      field: "message"
+      target_prefix: "hapi"
+      ignore_failure: true
+  - dissect:
+      tokenizer: "%{?date} %{?ts} [%{?thread}] INFO %{?loggerName} [%{}] %{msgType} - %{requestVerb} %{requestUrl}"
+      field: "message"
+      target_prefix: "hapi"
+
+
+output.elasticsearch:
+  hosts: '${ELASTICSEARCH_HOSTS:elasticsearch:9200}'
+
+setup.kibana.host: '${KIBANA_HOSTS:kibana:5601}'
+
+setup.dashboards.enabled: true
+
+monitoring.enabled: true

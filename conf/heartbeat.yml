@@ -1,0 +1,23 @@
+heartbeat.autodiscover:
+  providers:
+    - type: docker
+      templates:
+        - condition:
+            contains:
+              docker.container.image: hapi
+          config:
+            - type: http
+              id: ${data.docker.container.name}-http-monitor
+              name: ${data.docker.container.name}
+              schedule: '@every 3s'
+              urls: 
+                - http://${data.host}:${data.port}/hapi-fhir-jpaserver
+
+
+output.elasticsearch:
+  hosts: '${ELASTICSEARCH_HOSTS:elasticsearch:9200}'
+
+setup.kibana:
+  host: '${KIBANA_HOSTS:kibana:5601}'
+
+monitoring.enabled: true

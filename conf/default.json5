@@ -1,0 +1,22 @@
+{
+    server: {
+        type: "STU-3", // "DSTU-2" or "STU-3" or "R4"
+        url: "http://localhost:8080/hapi-fhir-jpaserver/fhir/",
+    },
+
+    hideTagSelector: true,
+
+    patientsPerPage: 25,
+
+    // AJAX requests timeout
+    timeout: 20000,
+
+    // If enabled is true (then url and param MUST be set) then clicking on the
+    // patient-related resources in detail view will open their source in that
+    // external viewer. Otherwise they will just be opened in new browser tab.
+    fhirViewer: {
+        enabled: false,
+        url    : "http://docs.smarthealthit.org/fhir-viewer/index.html",
+        param  : "url"
+    }
+}
